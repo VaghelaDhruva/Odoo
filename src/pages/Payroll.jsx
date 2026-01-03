@@ -103,13 +103,23 @@ const Payroll = () => {
             } else {
                 data = await payrollAPI.getAllPayroll();
             }
-            setPayrollData(data);
-            if (isEmployee && data.length > 0) {
+            
+            console.log('Fetched payroll data:', data); // Debug log
+            setPayrollData(data || []);
+            
+            if (isEmployee && data && data.length > 0) {
                 setSelectedPayroll(data[0]); // Show latest payroll for employee
             }
         } catch (error) {
             console.error('Error fetching payroll data:', error);
-            toast.error('Failed to load payroll data');
+            if (error.status === 401) {
+                toast.error('Please log in to view payroll data');
+            } else if (error.status === 403) {
+                toast.error('You do not have permission to view this payroll data');
+            } else {
+                toast.error('Failed to load payroll data');
+            }
+            setPayrollData([]);
         } finally {
             setLoading(false);
         }
@@ -195,6 +205,39 @@ const Payroll = () => {
         }
     ];
 
+    const createSamplePayroll = async () => {
+        try {
+            // Create sample payroll for all employees for current month
+            const employees = await userAPI.getAll();
+            const currentMonth = new Date();
+            currentMonth.setDate(1); // First day of current month
+            
+            for (const employee of employees) {
+                try {
+                    await payrollAPI.create({
+                        employeeId: employee.id,
+                        baseSalary: employee.salary || 50000, // Use employee salary or default
+                        allowances: 5000,
+                        deductions: 2000,
+                        payableMonth: currentMonth.toISOString(),
+                        status: 'PROCESSED'
+                    });
+                } catch (error) {
+                    // Skip if payroll already exists for this employee/month
+                    if (error.status !== 409) {
+                        console.error(`Failed to create payroll for ${employee.firstName}:`, error);
+                    }
+                }
+            }
+            
+            toast.success('Sample payroll data created successfully');
+            fetchPayrollData(); // Refresh data
+        } catch (error) {
+            console.error('Error creating sample payroll:', error);
+            toast.error('Failed to create sample payroll data');
+        }
+    };
+
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
@@ -211,8 +254,11 @@ const Payroll = () => {
                     <SalarySlip data={selectedPayroll} />
                 ) : (
                     <Paper sx={{ p: 4, textAlign: 'center' }}>
-                        <Typography variant="h6" color="text.secondary">
+                        <Typography variant="h6" color="text.secondary" gutterBottom>
                             No payroll data available
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Your payroll information will appear here once it's processed by HR.
                         </Typography>
                     </Paper>
                 )}
@@ -222,17 +268,47 @@ const Payroll = () => {
 
     return (
         <Box>
-            <Typography variant="h5" fontWeight="600" sx={{ mb: 3 }}>Department Payroll</Typography>
-            <Paper sx={{ width: '100%', height: 500 }}>
-                <DataGrid
-                    rows={payrollData}
-                    columns={columns}
-                    pageSizeOptions={[5, 10]}
-                    initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
-                    disableRowSelectionOnClick
-                    sx={{ border: 'none' }}
-                />
-            </Paper>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h5" fontWeight="600">Department Payroll</Typography>
+                {payrollData.length === 0 && (
+                    <Button 
+                        variant="contained" 
+                        onClick={createSamplePayroll}
+                        disabled={loading}
+                    >
+                        Create Sample Payroll
+                    </Button>
+                )}
+            </Box>
+            
+            {payrollData.length === 0 ? (
+                <Paper sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                        No payroll data available
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        No payroll records found. Create sample data to get started.
+                    </Typography>
+                    <Button 
+                        variant="contained" 
+                        onClick={createSamplePayroll}
+                        disabled={loading}
+                    >
+                        Create Sample Payroll Data
+                    </Button>
+                </Paper>
+            ) : (
+                <Paper sx={{ width: '100%', height: 500 }}>
+                    <DataGrid
+                        rows={payrollData}
+                        columns={columns}
+                        pageSizeOptions={[5, 10, 25]}
+                        initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+                        disableRowSelectionOnClick
+                        sx={{ border: 'none' }}
+                    />
+                </Paper>
+            )}
             
             {/* Show salary slip modal when payroll is selected */}
             {selectedPayroll && !isEmployee && (

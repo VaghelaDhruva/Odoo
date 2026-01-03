@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Paper, Typography, Grid, Avatar, Button, Tabs, Tab, Divider, Chip, List, ListItem, ListItemText, ListItemIcon, CircularProgress, Alert } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -8,8 +9,115 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import WorkIcon from '@mui/icons-material/Work';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { formatINR } from '../utils/currency';
-import { userAPI } from '../utils/api';
+import { userAPI, attendanceAPI } from '../utils/api';
 import toast from 'react-hot-toast';
+import dayjs from 'dayjs';
+
+// Attendance History Component
+const AttendanceHistory = ({ employeeId }) => {
+    const [attendanceData, setAttendanceData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            try {
+                setLoading(true);
+                // Get last 30 days of attendance
+                const endDate = dayjs();
+                const startDate = endDate.subtract(30, 'day');
+                
+                const data = await attendanceAPI.getAllAttendance({
+                    employeeId: employeeId,
+                    startDate: startDate.format('YYYY-MM-DD'),
+                    endDate: endDate.format('YYYY-MM-DD')
+                });
+                
+                setAttendanceData(data || []);
+            } catch (error) {
+                console.error('Error fetching attendance:', error);
+                toast.error('Failed to load attendance history');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (employeeId) {
+            fetchAttendance();
+        }
+    }, [employeeId]);
+
+    const columns = [
+        {
+            field: 'date',
+            headerName: 'Date',
+            flex: 1,
+            renderCell: (params) => dayjs(params.value).format('MMM DD, YYYY')
+        },
+        {
+            field: 'checkInTime',
+            headerName: 'Check In',
+            flex: 1,
+            renderCell: (params) => params.value ? dayjs(params.value).format('HH:mm:ss') : 'Not checked in'
+        },
+        {
+            field: 'checkOutTime',
+            headerName: 'Check Out',
+            flex: 1,
+            renderCell: (params) => params.value ? dayjs(params.value).format('HH:mm:ss') : 'Not checked out'
+        },
+        {
+            field: 'duration',
+            headerName: 'Duration',
+            flex: 1,
+            renderCell: (params) => {
+                if (!params.value) return 'N/A';
+                const hours = Math.floor(params.value / 3600);
+                const minutes = Math.floor((params.value % 3600) / 60);
+                return `${hours}h ${minutes}m`;
+            }
+        },
+        {
+            field: 'status',
+            headerName: 'Status',
+            flex: 1,
+            renderCell: (params) => {
+                const status = params.row.checkInTime ? (params.row.checkOutTime ? 'PRESENT' : 'CHECKED_IN') : 'ABSENT';
+                const color = status === 'PRESENT' ? 'success' : status === 'CHECKED_IN' ? 'warning' : 'error';
+                return <Chip label={status} color={color} size="small" />;
+            }
+        }
+    ];
+
+    if (loading) {
+        return (
+            <Paper sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
+                    <CircularProgress />
+                </Box>
+            </Paper>
+        );
+    }
+
+    return (
+        <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>Attendance History (Last 30 Days)</Typography>
+            {attendanceData.length === 0 ? (
+                <Alert severity="info">No attendance records found for the last 30 days.</Alert>
+            ) : (
+                <Box sx={{ height: 400, width: '100%' }}>
+                    <DataGrid
+                        rows={attendanceData}
+                        columns={columns}
+                        pageSize={10}
+                        rowsPerPageOptions={[10]}
+                        disableSelectionOnClick
+                        sx={{ border: 'none' }}
+                    />
+                </Box>
+            )}
+        </Paper>
+    );
+};
 
 const EmployeeDetail = () => {
     const { id } = useParams();
@@ -99,6 +207,7 @@ const EmployeeDetail = () => {
                 <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ px: 2 }}>
                     <Tab label="Profile" />
                     <Tab label="Job Details" />
+                    <Tab label="Attendance" />
                     <Tab label="Documents" />
                 </Tabs>
             </Paper>
@@ -178,6 +287,12 @@ const EmployeeDetail = () => {
                 )}
 
                 {tab === 2 && (
+                    <Grid item xs={12}>
+                        <AttendanceHistory employeeId={employee.id} />
+                    </Grid>
+                )}
+
+                {tab === 3 && (
                     <Grid item xs={12}>
                         <Paper sx={{ p: 3 }}>
                             <Typography variant="h6" gutterBottom>Documents</Typography>

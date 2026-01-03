@@ -4,6 +4,7 @@ import { List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box, Typogr
 import DashboardIcon from '@mui/icons-material/DashboardOutlined';
 import PeopleIcon from '@mui/icons-material/PeopleOutline';
 import AttendanceIcon from '@mui/icons-material/EventAvailableOutlined';
+import MonitoringIcon from '@mui/icons-material/VisibilityOutlined';
 import LeaveIcon from '@mui/icons-material/DateRangeOutlined';
 import PayrollIcon from '@mui/icons-material/AttachMoneyOutlined';
 import PersonIcon from '@mui/icons-material/PersonOutlined';
@@ -23,6 +24,7 @@ const Navigation = ({ onClose }) => {
         { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
         { text: 'Employees', icon: <PeopleIcon />, path: '/employees', roles: ['ADMIN', 'HR'] }, // Admin/HR only
         { text: 'Attendance', icon: <AttendanceIcon />, path: '/attendance', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+        { text: 'Attendance Monitor', icon: <MonitoringIcon />, path: '/attendance-monitoring', roles: ['ADMIN', 'HR'] }, // Admin/HR only
         { text: 'Leave', icon: <LeaveIcon />, path: '/leave', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
         { text: 'Payroll', icon: <PayrollIcon />, path: '/payroll', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
         { text: 'Profile', icon: <PersonIcon />, path: '/profile', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },

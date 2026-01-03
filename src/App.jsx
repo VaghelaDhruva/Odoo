@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import EmployeeDetail from './pages/EmployeeDetail';
 import Attendance from './pages/Attendance';
+import AttendanceMonitoring from './pages/AttendanceMonitoring';
 import Leave from './pages/Leave';
 import Payroll from './pages/Payroll';
 import Profile from './pages/Profile';
@@ -60,6 +61,7 @@ function App() {
                 <Route path="employees" element={<Employees />} />
                 <Route path="employees/:id" element={<EmployeeDetail />} />
                 <Route path="attendance" element={<Attendance />} />
+                <Route path="attendance-monitoring" element={<AttendanceMonitoring />} />
                 <Route path="leave" element={<Leave />} />
                 <Route path="payroll" element={<Payroll />} />
                 <Route path="profile" element={<Profile />} />
