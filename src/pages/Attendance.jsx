@@ -44,8 +44,15 @@ const Attendance = () => {
                         const checkInTime = dayjs(todayRecord.checkInTime);
                         const now = dayjs();
                         const diffSeconds = now.diff(checkInTime, 'second');
-                        setTimer(diffSeconds);
+                        setTimer(diffSeconds > 0 ? diffSeconds : 0);
+                    } else {
+                        setIsCheckedIn(false);
+                        setTimer(0);
                     }
+                } else {
+                    setTodayAttendance(null);
+                    setIsCheckedIn(false);
+                    setTimer(0);
                 }
                 
                 // Get attendance history (last 30 days)
@@ -61,8 +68,8 @@ const Attendance = () => {
                         date: dayjs(record.date).format('YYYY-MM-DD'),
                         checkIn: record.checkInTime ? dayjs(record.checkInTime).format('hh:mm A') : '-',
                         checkOut: record.checkOutTime ? dayjs(record.checkOutTime).format('hh:mm A') : '-',
-                        workHours: record.duration ? `${Math.floor(record.duration / 60)}h ${record.duration % 60}m` : '0h 0m',
-                        status: record.status || 'ABSENT',
+                        workHours: record.duration ? `${Math.floor(record.duration / 3600)}h ${Math.floor((record.duration % 3600) / 60)}m` : '0h 0m',
+                        status: record.checkInTime ? (record.checkOutTime ? 'PRESENT' : 'CHECKED_IN') : 'ABSENT',
                     })));
                 }
             } catch (err) {
@@ -77,6 +84,62 @@ const Attendance = () => {
             fetchAttendance();
         }
     }, [user]);
+
+    // Function to refresh attendance data
+    const fetchAttendance = async () => {
+        try {
+            setError(null);
+            
+            // Get today's attendance
+            const today = dayjs().format('YYYY-MM-DD');
+            const attendanceData = await attendanceAPI.getMyAttendance({
+                startDate: today,
+                endDate: today,
+            });
+            
+            if (attendanceData && attendanceData.length > 0) {
+                const todayRecord = attendanceData[0];
+                setTodayAttendance(todayRecord);
+                
+                // If checked in but not checked out, start timer
+                if (todayRecord.checkInTime && !todayRecord.checkOutTime) {
+                    setIsCheckedIn(true);
+                    const checkInTime = dayjs(todayRecord.checkInTime);
+                    const now = dayjs();
+                    const diffSeconds = now.diff(checkInTime, 'second');
+                    setTimer(diffSeconds > 0 ? diffSeconds : 0);
+                } else {
+                    setIsCheckedIn(false);
+                    setTimer(0);
+                }
+            } else {
+                setTodayAttendance(null);
+                setIsCheckedIn(false);
+                setTimer(0);
+            }
+            
+            // Get attendance history (last 30 days)
+            const thirtyDaysAgo = dayjs().subtract(30, 'days').format('YYYY-MM-DD');
+            const historyData = await attendanceAPI.getMyAttendance({
+                startDate: thirtyDaysAgo,
+                endDate: today,
+            });
+            
+            if (historyData) {
+                setHistory(historyData.map((record, index) => ({
+                    id: record.id || index,
+                    date: dayjs(record.date).format('YYYY-MM-DD'),
+                    checkIn: record.checkInTime ? dayjs(record.checkInTime).format('hh:mm A') : '-',
+                    checkOut: record.checkOutTime ? dayjs(record.checkOutTime).format('hh:mm A') : '-',
+                    workHours: record.duration ? `${Math.floor(record.duration / 3600)}h ${Math.floor((record.duration % 3600) / 60)}m` : '0h 0m',
+                    status: record.checkInTime ? (record.checkOutTime ? 'PRESENT' : 'CHECKED_IN') : 'ABSENT',
+                })));
+            }
+        } catch (err) {
+            console.error('Error fetching attendance:', err);
+            setError(err.message || 'Failed to load attendance data');
+        }
+    };
 
     // Timer effect
     useEffect(() => {
@@ -102,22 +165,22 @@ const Attendance = () => {
         try {
             setCheckingIn(true);
             const result = await attendanceAPI.checkIn();
+            
             setIsCheckedIn(true);
-            setTimer(0);
+            setTimer(0); // Start timer from 0
             setTodayAttendance(result);
+            
             toast.success('Successfully Checked In at ' + dayjs().format('hh:mm A'));
             
-            // Refresh history
-            const today = dayjs().format('YYYY-MM-DD');
-            const attendanceData = await attendanceAPI.getMyAttendance({
-                startDate: today,
-                endDate: today,
-            });
-            if (attendanceData && attendanceData.length > 0) {
-                setTodayAttendance(attendanceData[0]);
-            }
+            // Refresh attendance data
+            await fetchAttendance();
         } catch (error) {
-            toast.error(error.message || 'Failed to check in');
+            console.error('Check-in error:', error);
+            if (error.status === 409) {
+                toast.error('You have already checked in today');
+            } else {
+                toast.error(error.message || 'Failed to check in');
+            }
         } finally {
             setCheckingIn(false);
         }
@@ -127,31 +190,23 @@ const Attendance = () => {
         try {
             setCheckingOut(true);
             const result = await attendanceAPI.checkOut();
+            
             setIsCheckedIn(false);
             setTodayAttendance(result);
+            
             toast.success('Successfully Checked Out at ' + dayjs().format('hh:mm A'));
             
-            // Refresh history
-            const thirtyDaysAgo = dayjs().subtract(30, 'days').format('YYYY-MM-DD');
-            const historyData = await attendanceAPI.getMyAttendance({
-                startDate: thirtyDaysAgo,
-                endDate: dayjs().format('YYYY-MM-DD'),
-            });
-            
-            if (historyData) {
-                setHistory(historyData.map((record, index) => ({
-                    id: record.id || index,
-                    date: dayjs(record.date).format('YYYY-MM-DD'),
-                    checkIn: record.checkInTime ? dayjs(record.checkInTime).format('hh:mm A') : '-',
-                    checkOut: record.checkOutTime ? dayjs(record.checkOutTime).format('hh:mm A') : '-',
-                    workHours: record.duration ? `${Math.floor(record.duration / 60)}h ${record.duration % 60}m` : '0h 0m',
-                    status: record.status || 'ABSENT',
-                })));
-            }
-            
-            setTimer(0);
+            // Refresh attendance data
+            await fetchAttendance();
         } catch (error) {
-            toast.error(error.message || 'Failed to check out');
+            console.error('Check-out error:', error);
+            if (error.status === 404) {
+                toast.error('Please check in first before checking out');
+            } else if (error.status === 409) {
+                toast.error('You have already checked out today');
+            } else {
+                toast.error(error.message || 'Failed to check out');
+            }
         } finally {
             setCheckingOut(false);
         }
@@ -168,10 +223,10 @@ const Attendance = () => {
             width: 150,
             renderCell: (params) => {
                 let color = 'default';
-                if (params.value === 'Present') color = 'success';
-                if (params.value === 'Absent') color = 'error';
-                if (params.value === 'Half-Day') color = 'warning';
-                return <Chip label={params.value} color={color} size="small" variant="soft" />;
+                if (params.value === 'PRESENT') color = 'success';
+                if (params.value === 'ABSENT') color = 'error';
+                if (params.value === 'CHECKED_IN') color = 'warning';
+                return <Chip label={params.value} color={color} size="small" />;
             }
         },
     ];

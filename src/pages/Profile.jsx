@@ -23,10 +23,11 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 
 const Profile = () => {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
         phone: '',
         address: '',
@@ -67,13 +68,56 @@ const Profile = () => {
 
     const handleSave = async () => {
         try {
+            setSaving(true);
+            console.log('Updating profile with data:', formData); // Debug log
+            
+            // Validate phone number format if provided
+            if (formData.phone && formData.phone.trim()) {
+                const phoneRegex = /^[+]?[(]?[\d\s\-\(\)\.]{7,20}$/;
+                if (!phoneRegex.test(formData.phone.trim())) {
+                    toast.error('Please provide a valid phone number (7-20 digits with optional formatting)');
+                    return;
+                }
+            }
+            
+            // Validate address length if provided
+            if (formData.address && formData.address.length > 500) {
+                toast.error('Address must not exceed 500 characters');
+                return;
+            }
+            
             const updatedData = await userAPI.updateMe(formData);
+            console.log('Profile updated successfully:', updatedData); // Debug log
+            
             setProfileData(updatedData);
             setEditing(false);
+            
+            // Refresh user context to update header/navigation
+            try {
+                await refreshUser();
+            } catch (refreshError) {
+                console.warn('Failed to refresh user context:', refreshError);
+            }
+            
             toast.success('Profile updated successfully');
         } catch (error) {
             console.error('Error updating profile:', error);
-            toast.error('Failed to update profile');
+            
+            // Handle specific error cases
+            if (error.status === 400 && error.data && error.data.errors) {
+                const validationErrors = error.data.errors.map(err => err.msg).join(', ');
+                toast.error(`Validation failed: ${validationErrors}`);
+            } else if (error.status === 400) {
+                toast.error(error.message || 'Invalid data provided');
+            } else if (error.status === 401) {
+                toast.error('Please log in to update your profile');
+            } else if (error.status === 403) {
+                toast.error('You do not have permission to update this profile');
+            } else {
+                toast.error(error.message || 'Failed to update profile');
+            }
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -152,10 +196,11 @@ const Profile = () => {
                                         </Button>
                                         <Button
                                             variant="contained"
-                                            startIcon={<SaveIcon />}
+                                            startIcon={saving ? <CircularProgress size={16} /> : <SaveIcon />}
                                             onClick={handleSave}
+                                            disabled={saving}
                                         >
-                                            Save
+                                            {saving ? 'Saving...' : 'Save'}
                                         </Button>
                                     </Box>
                                 )}
@@ -192,7 +237,8 @@ const Profile = () => {
                                             size="small"
                                             value={formData.phone}
                                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                                            placeholder="Enter phone number"
+                                            placeholder="Enter phone number (e.g., +1-234-567-8900)"
+                                            helperText="Format: +1-234-567-8900 or (123) 456-7890"
                                         />
                                     ) : (
                                         <Typography variant="body1" fontWeight="500">

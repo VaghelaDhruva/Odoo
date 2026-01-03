@@ -2,10 +2,24 @@ import prisma from '../config/database.js';
 import { logActivity } from '../utils/activityLogger.js';
 
 export const checkIn = async (employeeId, date, req) => {
-  const attendanceDate = date ? new Date(date) : new Date();
-  attendanceDate.setHours(0, 0, 0, 0);
+  // Use current date if no date provided
+  let attendanceDate;
+  if (date) {
+    // Parse the date string and create a date in local timezone
+    const inputDate = new Date(date);
+    attendanceDate = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate());
+  } else {
+    // Use current date in local timezone
+    const now = new Date();
+    attendanceDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
 
-  // Check if attendance already exists for today
+  console.log('Check-in for employee:', employeeId); 
+  console.log('Original date input:', date);
+  console.log('Normalized attendance date:', attendanceDate);
+  console.log('Current time:', new Date());
+
+  // Check if attendance already exists for this date
   const existingAttendance = await prisma.attendance.findUnique({
     where: {
       employeeId_date: {
@@ -15,8 +29,15 @@ export const checkIn = async (employeeId, date, req) => {
     },
   });
 
+  console.log('Existing attendance found:', existingAttendance);
+
   if (existingAttendance && existingAttendance.checkInTime) {
-    const error = new Error('Already checked in for this date');
+    console.log('Already checked in - existing record:', {
+      id: existingAttendance.id,
+      date: existingAttendance.date,
+      checkInTime: existingAttendance.checkInTime
+    });
+    const error = new Error(`Already checked in for ${attendanceDate.toDateString()}. Existing check-in at ${existingAttendance.checkInTime}`);
     error.statusCode = 409;
     throw error;
   }
@@ -52,8 +73,21 @@ export const checkIn = async (employeeId, date, req) => {
 };
 
 export const checkOut = async (employeeId, date, req) => {
-  const attendanceDate = date ? new Date(date) : new Date();
-  attendanceDate.setHours(0, 0, 0, 0);
+  // Use current date if no date provided
+  let attendanceDate;
+  if (date) {
+    // Parse the date string and create a date in local timezone
+    const inputDate = new Date(date);
+    attendanceDate = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate());
+  } else {
+    // Use current date in local timezone
+    const now = new Date();
+    attendanceDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  console.log('Check-out for employee:', employeeId);
+  console.log('Original date input:', date);
+  console.log('Normalized attendance date:', attendanceDate);
 
   // Find attendance record
   const attendance = await prisma.attendance.findUnique({
@@ -85,8 +119,8 @@ export const checkOut = async (employeeId, date, req) => {
 
   const checkOutTime = new Date();
 
-  // Calculate duration in minutes
-  const duration = Math.floor((checkOutTime - attendance.checkInTime) / (1000 * 60));
+  // Calculate duration in seconds (not minutes)
+  const duration = Math.floor((checkOutTime - attendance.checkInTime) / 1000);
 
   // Update attendance
   const updatedAttendance = await prisma.attendance.update({
@@ -154,3 +188,42 @@ export const getAllAttendance = async (filters = {}) => {
   return attendances;
 };
 
+
+// Debug function to get attendance records for a specific employee
+export const getAttendanceDebug = async (employeeId) => {
+  const attendances = await prisma.attendance.findMany({
+    where: { employeeId },
+    orderBy: { date: 'desc' },
+    take: 10, // Last 10 records
+  });
+
+  return attendances.map(record => ({
+    id: record.id,
+    date: record.date,
+    checkInTime: record.checkInTime,
+    checkOutTime: record.checkOutTime,
+    status: record.status,
+    duration: record.duration
+  }));
+};
+
+// Function to delete a specific attendance record (for debugging)
+export const deleteAttendanceRecord = async (attendanceId, adminId, req) => {
+  const attendance = await prisma.attendance.findUnique({
+    where: { id: attendanceId }
+  });
+
+  if (!attendance) {
+    const error = new Error('Attendance record not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await prisma.attendance.delete({
+    where: { id: attendanceId }
+  });
+
+  await logActivity(adminId, 'ATTENDANCE_DELETED', 'Attendance', attendanceId, { originalDate: attendance.date }, req);
+
+  return { message: 'Attendance record deleted successfully' };
+};

@@ -6,7 +6,7 @@ import PeopleIcon from '@mui/icons-material/PeopleOutline';
 import AttendanceIcon from '@mui/icons-material/EventAvailableOutlined';
 import MonitoringIcon from '@mui/icons-material/VisibilityOutlined';
 import LeaveIcon from '@mui/icons-material/DateRangeOutlined';
-import PayrollIcon from '@mui/icons-material/AttachMoneyOutlined';
+import PayrollIcon from '@mui/icons-material/CurrencyRupee';
 import PersonIcon from '@mui/icons-material/PersonOutlined';
 import SettingsIcon from '@mui/icons-material/SettingsOutlined';
 import { useAuth } from '../context/AuthContext';

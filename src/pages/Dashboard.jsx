@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Paper, Grid, Typography, Card, CardContent, Chip, CircularProgress, Alert } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import { useAuth } from '../context/AuthContext';
 import { dashboardAPI } from '../utils/api';
@@ -132,7 +132,7 @@ const Dashboard = () => {
                         <StatCard
                             title="Monthly Payroll"
                             value={formatINRCompact(dashboardData.payrollStats?.totalPaid || 0)}
-                            icon={<AttachMoneyIcon sx={{ fontSize: 32 }} />}
+                            icon={<CurrencyRupeeIcon sx={{ fontSize: 32 }} />}
                             color="info"
                             subtitle={`${dashboardData.payrollStats?.employeeCount || 0} employees`}
                         />
@@ -237,7 +237,7 @@ const Dashboard = () => {
                         <StatCard
                             title="Latest Salary"
                             value={dashboardData.payrollSummary ? formatINRCompact(dashboardData.payrollSummary.netSalary || 0) : 'N/A'}
-                            icon={<AttachMoneyIcon sx={{ fontSize: 32 }} />}
+                            icon={<CurrencyRupeeIcon sx={{ fontSize: 32 }} />}
                             color="primary"
                             subtitle={dashboardData.payrollSummary ? dayjs(dashboardData.payrollSummary.payableMonth).format('MMM YYYY') : 'No data'}
                         />

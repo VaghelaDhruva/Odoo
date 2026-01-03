@@ -52,3 +52,30 @@ export const getAllAttendance = async (req, res, next) => {
   }
 };
 
+// Debug endpoint to get attendance records for current user
+export const getMyAttendanceDebug = async (req, res, next) => {
+  try {
+    const attendances = await attendanceService.getAttendanceDebug(req.user.id);
+    res.status(200).json({
+      success: true,
+      data: attendances,
+      message: 'Debug: Last 10 attendance records'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Debug endpoint to delete a specific attendance record (admin only)
+export const deleteAttendanceRecord = async (req, res, next) => {
+  try {
+    const result = await attendanceService.deleteAttendanceRecord(req.params.id, req.user.id, req);
+    res.status(200).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

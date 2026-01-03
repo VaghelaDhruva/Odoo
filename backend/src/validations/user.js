@@ -4,8 +4,15 @@ export const updateProfileValidation = [
   body('phone')
     .optional()
     .trim()
-    .matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/)
-    .withMessage('Please provide a valid phone number'),
+    .custom((value) => {
+      if (!value) return true; // Allow empty phone
+      // More flexible phone validation - allows various formats
+      const phoneRegex = /^[+]?[(]?[\d\s\-\(\)\.]{7,20}$/;
+      if (!phoneRegex.test(value)) {
+        throw new Error('Please provide a valid phone number (7-20 digits with optional formatting)');
+      }
+      return true;
+    }),
   
   body('address')
     .optional()

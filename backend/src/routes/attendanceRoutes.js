@@ -10,9 +10,11 @@ const router = express.Router();
 router.post('/checkin', requireAuth, attendanceValidation.checkInValidation, handleValidationErrors, attendanceController.checkIn);
 router.post('/checkout', requireAuth, attendanceValidation.checkOutValidation, handleValidationErrors, attendanceController.checkOut);
 router.get('/me', requireAuth, attendanceValidation.attendanceQueryValidation, handleValidationErrors, attendanceController.getMyAttendance);
+router.get('/me/debug', requireAuth, attendanceController.getMyAttendanceDebug); // Debug endpoint
 
 // Admin routes
 router.get('/', requireAuth, requireAdmin, attendanceValidation.attendanceQueryValidation, handleValidationErrors, attendanceController.getAllAttendance);
+router.delete('/:id', requireAuth, requireAdmin, attendanceController.deleteAttendanceRecord); // Debug delete endpoint
 
 export default router;
 
