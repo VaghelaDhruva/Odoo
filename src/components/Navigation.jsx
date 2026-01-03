@@ -6,6 +6,7 @@ import PeopleIcon from '@mui/icons-material/PeopleOutline';
 import AttendanceIcon from '@mui/icons-material/EventAvailableOutlined';
 import LeaveIcon from '@mui/icons-material/DateRangeOutlined';
 import PayrollIcon from '@mui/icons-material/AttachMoneyOutlined';
+import PersonIcon from '@mui/icons-material/PersonOutlined';
 import SettingsIcon from '@mui/icons-material/SettingsOutlined';
 import { useAuth } from '../context/AuthContext';
 
@@ -24,6 +25,7 @@ const Navigation = ({ onClose }) => {
         { text: 'Attendance', icon: <AttendanceIcon />, path: '/attendance', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
         { text: 'Leave', icon: <LeaveIcon />, path: '/leave', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
         { text: 'Payroll', icon: <PayrollIcon />, path: '/payroll', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
+        { text: 'Profile', icon: <PersonIcon />, path: '/profile', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
         { text: 'Settings', icon: <SettingsIcon />, path: '/settings', roles: ['ADMIN', 'HR', 'EMPLOYEE'] },
     ];
     

@@ -10,21 +10,60 @@ const getAuthToken = () => {
   return localStorage.getItem('accessToken');
 };
 
-// Helper function to make API requests
-const apiRequest = async (endpoint, options = {}) => {
-  const token = getAuthToken();
-  
-  const config = {
-    method: options.method || 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...(options.body && { body: options.body }),
-  };
+// Helper function to refresh token
+const refreshAuthToken = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
 
   try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Token refresh failed');
+    }
+
+    const data = await response.json();
+    const newAccessToken = data.data?.accessToken;
+    
+    if (newAccessToken) {
+      localStorage.setItem('accessToken', newAccessToken);
+      return newAccessToken;
+    } else {
+      throw new Error('Invalid refresh response');
+    }
+  } catch (error) {
+    // Clear tokens if refresh fails
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    // Redirect to login
+    window.location.href = '/login';
+    throw error;
+  }
+};
+
+// Helper function to make API requests
+const apiRequest = async (endpoint, options = {}) => {
+  let token = getAuthToken();
+  
+  const makeRequest = async (authToken) => {
+    const config = {
+      method: options.method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+        ...options.headers,
+      },
+      ...(options.body && { body: options.body }),
+    };
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
     // Handle non-JSON responses
@@ -47,7 +86,22 @@ const apiRequest = async (endpoint, options = {}) => {
     }
 
     return data;
+  };
+
+  try {
+    return await makeRequest(token);
   } catch (error) {
+    // If token is expired (401), try to refresh it
+    if (error.status === 401 && token) {
+      try {
+        const newToken = await refreshAuthToken();
+        return await makeRequest(newToken);
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        throw error; // Throw original error
+      }
+    }
+    
     // Handle network errors
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error('Unable to connect to server. Please check if the backend is running.');

@@ -229,9 +229,15 @@ export const updateUser = async (userId, updateData, req) => {
     throw error;
   }
 
-  // Prepare update data (exclude password from general update)
+  // Prepare update data
   const { password, ...restData } = updateData;
   const dataToUpdate = { ...restData };
+
+  // Handle password update if provided
+  if (password && password.trim()) {
+    const hashedPassword = await hashPassword(password);
+    dataToUpdate.password = hashedPassword;
+  }
 
   // Handle salary conversion
   if (dataToUpdate.salary !== undefined) {

@@ -22,9 +22,11 @@ export const AuthProvider = ({ children }) => {
                         avatar: userData.profileImage || `https://i.pravatar.cc/150?u=${userData.email}`,
                     });
                 } catch (error) {
+                    console.error('Auth initialization error:', error);
                     // Token is invalid, clear it
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
+                    setUser(null);
                 }
             }
             setLoading(false);
@@ -76,10 +78,26 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const refreshUser = async () => {
+        try {
+            const userData = await userAPI.getMe();
+            setUser({
+                ...userData,
+                name: `${userData.firstName} ${userData.lastName}`,
+                avatar: userData.profileImage || `https://i.pravatar.cc/150?u=${userData.email}`,
+            });
+            return userData;
+        } catch (error) {
+            console.error('Failed to refresh user data:', error);
+            throw error;
+        }
+    };
+
     const value = {
         user,
         login,
         logout,
+        refreshUser,
         loading,
         isAuthenticated: !!user,
     };

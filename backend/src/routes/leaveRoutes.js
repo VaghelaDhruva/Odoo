@@ -12,6 +12,7 @@ router.get('/me', requireAuth, leaveValidation.leaveQueryValidation, handleValid
 
 // Admin routes
 router.get('/', requireAuth, requireAdmin, leaveValidation.leaveQueryValidation, handleValidationErrors, leaveController.getAllLeaveRequests);
+router.put('/:id/status', requireAuth, requireAdmin, leaveValidation.updateStatusValidation, handleValidationErrors, leaveController.updateLeaveStatus);
 router.put('/:id/approve', requireAuth, requireAdmin, leaveValidation.approveLeaveValidation, handleValidationErrors, leaveController.approveLeaveRequest);
 router.put('/:id/reject', requireAuth, requireAdmin, leaveValidation.rejectLeaveValidation, handleValidationErrors, leaveController.rejectLeaveRequest);
 

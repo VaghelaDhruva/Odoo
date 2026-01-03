@@ -52,6 +52,16 @@ const DashboardLayout = () => {
         setAnchorEl(null);
     };
 
+    const handleProfileClick = () => {
+        handleClose();
+        navigate('/profile');
+    };
+
+    const handleSettingsClick = () => {
+        handleClose();
+        navigate('/settings');
+    };
+
     const handleLogout = () => {
         handleClose();
         logout();
@@ -66,6 +76,7 @@ const DashboardLayout = () => {
         if (path.includes('/attendance')) return 'Attendance';
         if (path.includes('/leave')) return 'Leave Management';
         if (path.includes('/payroll')) return 'Payroll';
+        if (path.includes('/profile')) return 'My Profile';
         if (path.includes('/settings')) return 'Settings';
         return 'Dayflow HRMS';
     };
@@ -142,8 +153,8 @@ const DashboardLayout = () => {
                             open={Boolean(anchorEl)}
                             onClose={handleClose}
                         >
-                            <MenuItem onClick={handleClose}>Profile</MenuItem>
-                            <MenuItem onClick={handleClose}>Settings</MenuItem>
+                            <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
+                            <MenuItem onClick={handleSettingsClick}>Settings</MenuItem>
                             <Divider sx={{ my: 0.5 }} />
                             <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>Logout</MenuItem>
                         </Menu>

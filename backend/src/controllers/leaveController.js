@@ -75,3 +75,23 @@ export const rejectLeaveRequest = async (req, res, next) => {
   }
 };
 
+export const updateLeaveStatus = async (req, res, next) => {
+  try {
+    const { status, comments } = req.body;
+    const leaveRequest = await leaveService.updateLeaveStatus(
+      req.params.id,
+      req.user.id,
+      status,
+      comments,
+      req
+    );
+    res.status(200).json({
+      success: true,
+      message: `Leave request ${status.toLowerCase()} successfully`,
+      data: leaveRequest,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

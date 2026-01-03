@@ -202,3 +202,54 @@ export const rejectLeaveRequest = async (leaveId, adminId, adminComment, req) =>
   return updatedLeaveRequest;
 };
 
+export const updateLeaveStatus = async (leaveId, adminId, status, comments, req) => {
+  const leaveRequest = await prisma.leaveRequest.findUnique({
+    where: { id: leaveId },
+    include: {
+      employee: {
+        select: {
+          id: true,
+          employeeId: true,
+        },
+      },
+    },
+  });
+
+  if (!leaveRequest) {
+    const error = new Error('Leave request not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (leaveRequest.status !== 'PENDING') {
+    const error = new Error(`Leave request is already ${leaveRequest.status}`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const updatedLeaveRequest = await prisma.leaveRequest.update({
+    where: { id: leaveId },
+    data: {
+      status: status.toUpperCase(),
+      adminComment: comments,
+      decisionBy: adminId,
+    },
+    include: {
+      employee: {
+        select: {
+          id: true,
+          employeeId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  const activityType = status.toUpperCase() === 'APPROVED' ? 'LEAVE_APPROVED' : 'LEAVE_REJECTED';
+  await logActivity(adminId, activityType, 'LeaveRequest', leaveId, { employeeId: leaveRequest.employeeId, adminComment: comments }, req);
+
+  return updatedLeaveRequest;
+};
+

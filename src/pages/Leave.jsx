@@ -76,7 +76,17 @@ const LeaveModal = ({ open, onClose, onApply, submitting = false }) => {
                             <Controller
                                 name="reason"
                                 control={control}
-                                rules={{ required: 'Reason is required' }}
+                                rules={{ 
+                                    required: 'Reason is required',
+                                    minLength: {
+                                        value: 10,
+                                        message: 'Reason must be at least 10 characters'
+                                    },
+                                    maxLength: {
+                                        value: 1000,
+                                        message: 'Reason must not exceed 1000 characters'
+                                    }
+                                }}
                                 render={({ field }) => (
                                     <TextField {...field} label="Reason/Remarks" multiline rows={3} fullWidth error={!!errors.reason} helperText={errors.reason?.message} />
                                 )}
@@ -185,7 +195,19 @@ const Leave = () => {
                 })));
             }
         } catch (error) {
-            toast.error(error.message || 'Failed to submit leave application');
+            console.error('Error submitting leave application:', error);
+            
+            // Handle specific error cases
+            if (error.status === 400 && error.data && error.data.errors) {
+                const validationErrors = error.data.errors.map(err => err.msg).join(', ');
+                toast.error(`Validation failed: ${validationErrors}`);
+            } else if (error.status === 409) {
+                toast.error('You have an overlapping leave request for these dates');
+            } else if (error.status === 401) {
+                toast.error('Please log in to apply for leave');
+            } else {
+                toast.error(error.message || 'Failed to submit leave application');
+            }
         } finally {
             setSubmitting(false);
         }

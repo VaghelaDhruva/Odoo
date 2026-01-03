@@ -6,6 +6,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import { useAuth } from '../context/AuthContext';
 import { dashboardAPI } from '../utils/api';
+import { formatINRCompact } from '../utils/currency';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import dayjs from 'dayjs';
 
@@ -130,7 +131,7 @@ const Dashboard = () => {
                     <Grid item xs={12} sm={6} md={3}>
                         <StatCard
                             title="Monthly Payroll"
-                            value={`$${((dashboardData.payrollStats?.totalPaid || 0) / 1000).toFixed(0)}K`}
+                            value={formatINRCompact(dashboardData.payrollStats?.totalPaid || 0)}
                             icon={<AttachMoneyIcon sx={{ fontSize: 32 }} />}
                             color="info"
                             subtitle={`${dashboardData.payrollStats?.employeeCount || 0} employees`}
@@ -235,7 +236,7 @@ const Dashboard = () => {
                     <Grid item xs={12} sm={6} md={3}>
                         <StatCard
                             title="Latest Salary"
-                            value={dashboardData.payrollSummary ? `$${((dashboardData.payrollSummary.netSalary || 0) / 1000).toFixed(0)}K` : 'N/A'}
+                            value={dashboardData.payrollSummary ? formatINRCompact(dashboardData.payrollSummary.netSalary || 0) : 'N/A'}
                             icon={<AttachMoneyIcon sx={{ fontSize: 32 }} />}
                             color="primary"
                             subtitle={dashboardData.payrollSummary ? dayjs(dashboardData.payrollSummary.payableMonth).format('MMM YYYY') : 'No data'}

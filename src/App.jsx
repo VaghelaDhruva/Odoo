@@ -18,6 +18,7 @@ import EmployeeDetail from './pages/EmployeeDetail';
 import Attendance from './pages/Attendance';
 import Leave from './pages/Leave';
 import Payroll from './pages/Payroll';
+import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 
 // Component to handle login route with redirect if already authenticated
@@ -61,6 +62,7 @@ function App() {
                 <Route path="attendance" element={<Attendance />} />
                 <Route path="leave" element={<Leave />} />
                 <Route path="payroll" element={<Payroll />} />
+                <Route path="profile" element={<Profile />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Routes>

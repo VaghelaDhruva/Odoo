@@ -75,3 +75,19 @@ export const leaveQueryValidation = [
     .withMessage('End date must be a valid ISO 8601 date'),
 ];
 
+export const updateStatusValidation = [
+  param('id')
+    .isUUID()
+    .withMessage('Invalid leave request ID format'),
+  
+  body('status')
+    .isIn(['APPROVED', 'REJECTED', 'CANCELLED'])
+    .withMessage('Status must be APPROVED, REJECTED, or CANCELLED'),
+  
+  body('comments')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Comments must not exceed 500 characters'),
+];
+

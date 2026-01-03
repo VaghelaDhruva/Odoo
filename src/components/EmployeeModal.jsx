@@ -18,35 +18,40 @@ import dayjs from 'dayjs';
 
 const roles = ['Software Engineer', 'Product Manager', 'HR Specialist', 'Designer', 'Sales Manager'];
 const departments = ['Engineering', 'Product', 'Human Resources', 'Design', 'Sales'];
-const statuses = ['Active', 'On Leave', 'Terminated'];
+const statuses = ['ACTIVE', 'ON_LEAVE', 'TERMINATED'];
 
 const EmployeeModal = ({ open, onClose, onSave, employee }) => {
     const { control, handleSubmit, reset, setValue, formState: { errors } } = useForm({
         defaultValues: {
-            name: '',
+            firstName: '',
+            lastName: '',
             email: '',
+            password: '',
             role: '',
             department: '',
-            status: 'Active',
+            status: 'ACTIVE',
             joinDate: null,
         },
     });
 
     useEffect(() => {
         if (employee) {
-            setValue('name', employee.name);
+            setValue('firstName', employee.firstName || '');
+            setValue('lastName', employee.lastName || '');
             setValue('email', employee.email);
-            setValue('role', employee.role);
-            setValue('department', employee.department);
-            setValue('status', employee.status);
+            setValue('role', employee.designation || '');
+            setValue('department', employee.department || '');
+            setValue('status', employee.employmentStatus || 'ACTIVE');
             setValue('joinDate', employee.joinDate ? dayjs(employee.joinDate) : null);
         } else {
             reset({
-                name: '',
+                firstName: '',
+                lastName: '',
                 email: '',
+                password: '',
                 role: '',
                 department: '',
-                status: 'Active',
+                status: 'ACTIVE',
                 joinDate: null,
             });
         }
@@ -72,26 +77,42 @@ const EmployeeModal = ({ open, onClose, onSave, employee }) => {
                 <DialogContent dividers>
                     <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
                         <Avatar
-                            src={employee?.avatar}
+                            src={employee?.profileImage}
                             sx={{ width: 80, height: 80, bgcolor: 'primary.light' }}
                         >
-                            {!employee?.avatar && 'N/A'}
+                            {!employee?.profileImage && employee ? `${employee.firstName?.[0]}${employee.lastName?.[0]}` : 'N/A'}
                         </Avatar>
                     </Box>
 
                     <Grid container spacing={2}>
-                        <Grid item xs={12}>
+                        <Grid item xs={6}>
                             <Controller
-                                name="name"
+                                name="firstName"
                                 control={control}
-                                rules={{ required: 'Name is required' }}
+                                rules={{ required: 'First name is required' }}
                                 render={({ field }) => (
                                     <TextField
                                         {...field}
-                                        label="Full Name"
+                                        label="First Name"
                                         fullWidth
-                                        error={!!errors.name}
-                                        helperText={errors.name?.message}
+                                        error={!!errors.firstName}
+                                        helperText={errors.firstName?.message}
+                                    />
+                                )}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Controller
+                                name="lastName"
+                                control={control}
+                                rules={{ required: 'Last name is required' }}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Last Name"
+                                        fullWidth
+                                        error={!!errors.lastName}
+                                        helperText={errors.lastName?.message}
                                     />
                                 )}
                             />
@@ -114,6 +135,29 @@ const EmployeeModal = ({ open, onClose, onSave, employee }) => {
                                         fullWidth
                                         error={!!errors.email}
                                         helperText={errors.email?.message}
+                                    />
+                                )}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Controller
+                                name="password"
+                                control={control}
+                                rules={{
+                                    required: !employee ? 'Password is required for new employees' : false,
+                                    minLength: {
+                                        value: 6,
+                                        message: 'Password must be at least 6 characters'
+                                    }
+                                }}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label={employee ? "New Password (optional)" : "Password"}
+                                        type="password"
+                                        fullWidth
+                                        error={!!errors.password}
+                                        helperText={errors.password?.message || (!employee ? "Minimum 6 characters" : "Leave blank to keep current password")}
                                     />
                                 )}
                             />

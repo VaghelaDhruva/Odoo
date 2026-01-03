@@ -13,7 +13,7 @@ router.put('/me', requireAuth, userValidation.updateProfileValidation, handleVal
 // Admin routes
 router.get('/', requireAuth, requireAdmin, userController.getAllUsers);
 router.get('/:id', requireAuth, requireAdmin, userValidation.userIdParamValidation, handleValidationErrors, userController.getUserById);
-router.post('/', requireAuth, requireAdmin, userValidation.updateEmployeeValidation, handleValidationErrors, userController.createUser);
+router.post('/', requireAuth, requireAdmin, userValidation.createEmployeeValidation, handleValidationErrors, userController.createUser);
 router.put('/:id', requireAuth, requireAdmin, userValidation.userIdParamValidation, userValidation.updateEmployeeValidation, handleValidationErrors, userController.updateUser);
 
 export default router;

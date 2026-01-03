@@ -1,38 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Grid, Avatar, Button, Tabs, Tab, Divider, Chip, List, ListItem, ListItemText, ListItemIcon } from '@mui/material';
+import { Box, Paper, Typography, Grid, Avatar, Button, Tabs, Tab, Divider, Chip, List, ListItem, ListItemText, ListItemIcon, CircularProgress, Alert } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import WorkIcon from '@mui/icons-material/Work';
 import DescriptionIcon from '@mui/icons-material/Description';
+import { formatINR } from '../utils/currency';
+import { userAPI } from '../utils/api';
+import toast from 'react-hot-toast';
 
 const EmployeeDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [tab, setTab] = useState(0);
+    const [employee, setEmployee] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Mock data fetching based on ID
-    const employee = {
-        id: id,
-        name: 'Sarah Smith',
-        role: 'Product Manager',
-        department: 'Product',
-        status: 'Active',
-        email: 'sarah@dayflow.com',
-        phone: '+1 (555) 123-4567',
-        location: 'San Francisco, CA',
-        joinDate: 'Jan 15, 2023',
-        avatar: 'https://i.pravatar.cc/150?u=1',
-        salary: 92000,
-        about: 'Experienced Product Manager with a demonstrated history of working in the computer software industry. Skilled in Product Lifecycle Management, Agile Methodologies, and User Experience.',
-        documents: [
-            { name: 'Offer Letter.pdf', date: 'Jan 10, 2023' },
-            { name: 'Non-Disclosure Agreement.pdf', date: 'Jan 10, 2023' },
-            { name: 'Tax Forms 2023.pdf', date: 'Jan 15, 2023' },
-        ]
-    };
+    useEffect(() => {
+        const fetchEmployee = async () => {
+            try {
+                setLoading(true);
+                const employeeData = await userAPI.getById(id);
+                setEmployee({
+                    ...employeeData,
+                    name: `${employeeData.firstName} ${employeeData.lastName}`,
+                    role: employeeData.designation || 'N/A',
+                    status: employeeData.employmentStatus || 'ACTIVE',
+                    joinDate: employeeData.joinDate ? new Date(employeeData.joinDate).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    }) : 'N/A',
+                    avatar: employeeData.profileImage || `https://i.pravatar.cc/150?u=${employeeData.email}`,
+                    about: `${employeeData.designation || 'Employee'} in the ${employeeData.department || 'Company'} department.`,
+                    location: employeeData.address || 'Not specified',
+                });
+                setError(null);
+            } catch (err) {
+                console.error('Error fetching employee:', err);
+                setError(err.message || 'Failed to load employee details');
+                toast.error('Failed to load employee details');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (id) {
+            fetchEmployee();
+        }
+    }, [id]);
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (error || !employee) {
+        return (
+            <Box>
+                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/employees')} sx={{ mb: 2 }}>
+                    Back to Employees
+                </Button>
+                <Alert severity="error" sx={{ mt: 2 }}>
+                    {error || 'Employee not found'}
+                </Alert>
+            </Box>
+        );
+    }
 
     return (
         <Box>
@@ -122,15 +162,15 @@ const EmployeeDetail = () => {
                             <Grid container spacing={3}>
                                 <Grid item xs={12} sm={4}>
                                     <Typography variant="caption" color="text.secondary">Employee ID</Typography>
-                                    <Typography variant="body1">EMP-{employee.id.toString().padStart(4, '0')}</Typography>
+                                    <Typography variant="body1">{employee.employeeId || `EMP-${employee.id.toString().slice(-4)}`}</Typography>
                                 </Grid>
                                 <Grid item xs={12} sm={4}>
                                     <Typography variant="caption" color="text.secondary">Current Salary</Typography>
-                                    <Typography variant="body1">${employee.salary.toLocaleString()} / year</Typography>
+                                    <Typography variant="body1">{employee.salary ? formatINR(employee.salary) + ' / year' : 'Not specified'}</Typography>
                                 </Grid>
                                 <Grid item xs={12} sm={4}>
-                                    <Typography variant="caption" color="text.secondary">Employment Type</Typography>
-                                    <Typography variant="body1">Full Time</Typography>
+                                    <Typography variant="caption" color="text.secondary">Department</Typography>
+                                    <Typography variant="body1">{employee.department || 'Not specified'}</Typography>
                                 </Grid>
                             </Grid>
                         </Paper>
@@ -141,15 +181,9 @@ const EmployeeDetail = () => {
                     <Grid item xs={12}>
                         <Paper sx={{ p: 3 }}>
                             <Typography variant="h6" gutterBottom>Documents</Typography>
-                            <List>
-                                {employee.documents.map((doc, i) => (
-                                    <ListItem key={i} sx={{ borderBottom: '1px solid #f0f0f0' }}>
-                                        <ListItemIcon><DescriptionIcon color="primary" /></ListItemIcon>
-                                        <ListItemText primary={doc.name} secondary={doc.date} />
-                                        <Button variant="text" size="small">Download</Button>
-                                    </ListItem>
-                                ))}
-                            </List>
+                            <Alert severity="info">
+                                Document management feature is coming soon. Contact HR for document requests.
+                            </Alert>
                         </Paper>
                     </Grid>
                 )}
